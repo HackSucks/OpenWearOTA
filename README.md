@@ -1,0 +1,94 @@
+# OpenWearOTA
+
+OpenWearOTA re-purposes "e-waste" smartwatches into flashable microcontroller
+boards. It talks to the watch over BLE using the same OTA protocol the watch's
+own companion app would use, and pushes your own firmware instead of the OEM
+image.
+
+It is a from-scratch reimplementation of those OTA protocols, built by
+reverse-engineering the FitPro app, and using a bit of vendor SDK code,
+not a fork of anything. See [DOCUMENTATION.md](DOCUMENTATION.md) for exactly
+how each protocol was recovered and what's confirmed vs. best-effort.
+
+## Is my watch eligible?
+
+If your watch pairs to an app called **FitPro** (or one of its same-APK,
+different-splash-screen clones — DaFit, WearFit, VeryFit, etc.) and you found
+it by scanning a QR code in the box rather than searching an app store, it's
+almost certainly one of the chip families below.
+
+## Supported chip families
+
+| Family | Real silicon | Status |
+|---|---|---|
+| SHB/SLB ("3rd-gen" generic Chinese OTA) | YiChip-Ali-BLE (SLB side, unconfirmed) | ✅ Flashing implemented |
+| PhyPlus | PHY62xx  | ✅ Flashing implemented |
+| Telink | TLSR8232 / TLSR8253 / TLSR82xx | ✅ Flashing implemented |
+| JieLi (RCSP) | AC695N / AC696x | ✅ Flashing implemented |
+| Beken | BK3431 / BK3432 / BK3266 | ✅ Flashing implemented |
+| OnMicro | OM6620 family | ⚠️ Detect + best-effort transfer — unconfirmed ACK/retry semantics |
+| RealSil (RTK) | RTL876x | ✅ Flashing implemented |
+
+Detection works for all seven; if your watch isn't on this list at all,
+OpenWearOTA will fall back to dumping every GATT service/characteristic UUID
+it found so the chip can still be identified manually (and, ideally, added to
+the table above — see [Contributing](#contributing)).
+
+## Install
+
+```bash
+pip install openwearota 
+```
+
+Requires Python 3.10+ and a BLE adapter that [bleak](https://github.com/hbldh/bleak)
+supports (Linux/BlueZ, macOS, Windows).
+
+## Usage
+
+Run with no arguments for an interactive menu — it'll scan, detect the
+chipset, and walk you through picking a firmware file:
+
+```bash
+openwearota
+```
+
+Or drive it directly for scripting:
+
+```bash
+openwearota scan
+openwearota flash AA:BB:CC:DD:EE:FF firmware.bin
+openwearota uart  AA:BB:CC:DD:EE:FF          # BLE-serial bridge for custom/MicroPython firmware
+```
+
+## Progress
+
+Under active development. Even once tagged as a real release, treat it as
+**Alpha**: the SHB/SLB, PhyPlus, Telink, JieLi, Beken, and RealSil flows have each flashed real
+hardware, but OnMicro is not yet trustworthy for anything but
+detection (see the table above).
+
+> NOTE: If you are developing custom firmware for your watch, you MUST implement UART over BLE as according to `uart.py`, otherwise you will have no way to communicate with the watch unless you solder to SWD-like pads and UART Tx/Rx. if you also do not implement the same OTA functionality (check documentation and driver files if starting from scratch), you will only have one single flash forever until you do same SWD-like and UART soldering. 
+
+> **⚠️ You can brick your watch with this tool.** OpenWearOTA will tell you
+> the detected chipset before writing anything, but it cannot verify that the
+> firmware *file* you point it at was actually built for that chipset — that's
+> on you. Compile against the SDK matching your watch's specific chip, and
+> don't interrupt power or the BLE connection mid-flash.
+
+## Contributing
+
+The most useful contributions right now are the ones DOCUMENTATION.md asks
+for directly: confirmation of OnMicro's full block-transfer/ACK handshake, and
+a packet capture of a real SHB-mode OTA in progress — DOCUMENTATION.md §1.8
+and §1.8b document two different opcode-numbering schemes for the same GATT
+fingerprint (likely two PhyPlus SDK generations), and it's not yet confirmed
+which one any specific watch in the wild actually speaks. If you extend the
+protocol reference, keep its standard — cite what you actually observed
+(decompiled code path, vendor SDK source path, or a packet capture), and mark
+anything inferred as best-effort rather than presenting a guess as fact.
+
+You can fork and mess around with this project as much as you please.
+
+## License
+
+GPLv3 — see [LICENSE](LICENSE)

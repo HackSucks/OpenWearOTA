@@ -1,0 +1,32 @@
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name        = "openwearota"
+version     = "0.0.1a2"
+description = "Re-purpose e-waste smartwatches via OTA firmware updates"
+readme      = "README.md"
+license     = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.10"
+keywords = ["ble", "bluetooth", "ota", "dfu", "smartwatch", "firmware", "reverse-engineering"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Hardware",
+    "Topic :: Software Development :: Embedded Systems",
+]
+
+dependencies = [
+    "bleak>=0.21",
+]
+
+[project.scripts]
+openwearota = "openwearota.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["openwearota*"]
